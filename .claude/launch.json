@@ -1,0 +1,10 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "book-notes",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "preview_out"]
+    }
+  ]
+}
