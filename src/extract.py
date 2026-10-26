@@ -52,16 +52,31 @@ def extract_epub(path: str) -> ChapterList:
     # 优先用 toc（可能嵌套），退化为 spine
     toc = book.toc
     if toc:
+        def _norm_href(href):
+            """toc 的 href 可能是字符串、list（多链接）或 None，归一成第一个非空字符串文件名。"""
+            if href is None:
+                return None
+            if isinstance(href, (list, tuple)):
+                for h in href:
+                    if h:
+                        return str(h).split("#")[0]
+                return None
+            return str(href).split("#")[0] or None
+
         def flatten(node_list):
             for node in node_list:
                 if isinstance(node, tuple):
-                    # (title, href, subitems...)
-                    yield node[0], node[1]
+                    # (title, href, subitems...)；href 可能是 list
+                    href = _norm_href(node[1])
+                    if href:
+                        yield node[0], href
                     if len(node) > 2 and node[2]:
                         yield from flatten(node[2])
                 else:
                     # ebooklib Link 对象：title + href（href 是文件名，可能带 #anchor）
-                    yield node.title, node.href.split("#")[0]
+                    href = _norm_href(getattr(node, "href", None))
+                    if href:
+                        yield node.title, href
         items = list(flatten(toc))
     else:
         items = [(getattr(item, "title", None) or f"第 {i+1} 章", item.get_id())
@@ -69,6 +84,9 @@ def extract_epub(path: str) -> ChapterList:
 
     seen_ids = set()
     for title, ref in items:
+        # 防御：ref 必须是可哈希的字符串（文件名或内部 id），否则跳过该项
+        if not isinstance(ref, str) or not ref:
+            continue
         # toc 路径下 ref 是文件名，spine 路径下 ref 就是内部 id
         item_id = fname_to_id.get(ref, ref)
         if item_id in seen_ids:

@@ -2,9 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "book-notes",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "preview_out"]
+      "name": "book-web",
+      "runtimeExecutable": "D:\\Work\\11_other\\book\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "web.app:app", "--port", "8765", "--app-dir", "D:\\Work\\11_other\\book"],
+      "port": 8765
     }
   ]
 }

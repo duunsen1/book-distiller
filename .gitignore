@@ -6,3 +6,5 @@ __pycache__/
 *.pyc
 .env
 book-config
+# Web 运行时数据（用户库、密钥、每用户凭证/笔记，绝不提交）
+data/

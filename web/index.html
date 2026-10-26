@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>懒人读书 · 在线蒸馏</title>
+<style>
+:root {
+  --bg: #faf7f2; --card: #fff; --ink: #1f2328; --muted: #6b7280;
+  --line: #e5e0d8; --accent: #b45309; --accent-soft: #fef3c7;
+  --ok: #15803d; --err: #b91c1c; --run: #1d4ed8;
+}
+.dark { --bg: #14120f; --card: #1e1b17; --ink: #ece8e1; --muted: #9a938a;
+  --line: #2e2a24; --accent: #f59e0b; --accent-soft: #3a2c10; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--ink); line-height: 1.6; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 80px; }
+header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+h1 { font-size: 26px; margin: 0; }
+h1 small { color: var(--muted); font-size: 14px; font-weight: normal; margin-left: 10px; }
+#themeBtn, .ghost { background: none; border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 12px; cursor: pointer; color: var(--ink); font-size: 14px; }
+.grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; margin-bottom: 16px; }
+.card h2 { font-size: 15px; margin: 0 0 12px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; }
+label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+input, select, textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--bg); color: var(--ink); font-size: 14px; }
+input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+button.primary { width: 100%; margin-top: 14px; padding: 11px; border: none; border-radius: 8px;
+  background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+button.primary:disabled { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 10px; } .row > * { flex: 1; }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px;
+  background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+.badge.ok { background: #dcfce7; color: var(--ok); } .dark .badge.ok { background: #14321f; color: #4ade80; }
+.badge.err { background: #fee2e2; color: var(--err); } .dark .badge.err { background: #3a1515; color: #f87171; }
+.badge.run { background: #dbeafe; color: var(--run); } .dark .badge.run { background: #172554; color: #93c5fd; }
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.tabs button { flex: 1; padding: 9px; border: 1px solid var(--line); background: var(--bg);
+  border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 14px; }
+.tabs button.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent);
+  font-weight: 600; }
+.hidden { display: none !important; }
+.cand { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border: 1px solid var(--line);
+  border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 13px; }
+.cand:hover { border-color: var(--accent); }
+.cand.sel { border-color: var(--accent); background: var(--accent-soft); }
+.cand .t { font-weight: 600; }
+.cand .m { color: var(--muted); font-size: 12px; }
+.log { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px; max-height: 220px;
+  overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: var(--muted); }
+.job { border-bottom: 1px solid var(--line); padding: 10px 2px; font-size: 14px; }
+.job:last-child { border-bottom: none; }
+.job .title { font-weight: 600; }
+.job .sub { color: var(--muted); font-size: 12px; }
+.book { display: block; text-decoration: none; color: var(--ink); padding: 12px 4px;
+  border-bottom: 1px solid var(--line); }
+.book:last-child { border-bottom: none; }
+.book:hover .t { color: var(--accent); }
+.book .t { font-weight: 600; font-size: 15px; }
+.book .o { color: var(--muted); font-size: 13px; margin-top: 2px; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.link { color: var(--accent); cursor: pointer; text-decoration: underline; font-size: 13px; }
+.note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+footer { margin-top: 40px; text-align: center; color: var(--muted); font-size: 12px; }
+.authbox { max-width: 380px; margin: 8vh auto 0; }
+.authbox .tabs { margin-bottom: 18px; }
+.toggle { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>懒人读书 <small>上传一本书，或在线搜书，LLM 蒸馏成精华笔记</small></h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="whoami" class="note" style="margin:0"></span>
+      <button id="logoutBtn" class="ghost hidden">退出</button>
+      <button id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- 登录 / 注册 -->
+  <div id="authView" class="hidden">
+    <div class="card authbox">
+      <div class="tabs">
+        <button id="authLogin" class="on">登录</button>
+        <button id="authRegister">注册</button>
+      </div>
+      <label>用户名</label>
+      <input id="authUser" autocomplete="username" placeholder="2-32 位字母/数字">
+      <label>密码</label>
+      <input id="authPass" type="password" autocomplete="current-password" placeholder="至少 6 位">
+      <button class="primary" id="authGo">登录</button>
+      <div id="authErr" class="note" style="color:var(--err)"></div>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="mainView" class="hidden">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="toggle" id="accToggle">⚙️ 账户与凭证
+            <span id="accStatus" style="font-weight:normal;color:var(--muted);font-size:12px"></span>
+            <span style="margin-left:auto" id="accArrow">▸</span>
+          </div>
+          <div id="accBody" class="hidden">
+            <div class="note" style="margin-top:0">LLM 与 Z-Library 凭证都**加密存于本站**，仅用于你的任务。</div>
+            <label>LLM 提供商</label>
+            <select id="llmProvider">
+              <option value="openai">OpenAI 兼容（DeepSeek / Moonshot / GLM / 中转 / Ollama…）</option>
+              <option value="anthropic">Anthropic 官方 API</option>
+            </select>
+            <label id="baseLabel">接口地址 Base URL</label>
+            <input id="llmBase" placeholder="如 https://api.deepseek.com/v1">
+            <label>API Key（留空则保留原 key）</label>
+            <input id="llmKey" type="password" placeholder="sk-...">
+            <label>模型名</label>
+            <input id="llmModel" placeholder="如 deepseek-chat / claude-sonnet-4-5">
+            <button class="primary" id="llmSave" style="margin-top:10px">保存 LLM 设置</button>
+
+            <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+            <div class="note" style="margin-top:0">Z-Library 凭证：在自己浏览器登录 z-lib 后，
+              DevTools → Application → Cookies 里取 <code>remix_userid</code> 和 <code>remix_userkey</code>。</div>
+            <label>remix_userid</label>
+            <input id="zlUid" placeholder="14475930">
+            <label>remix_userkey</label>
+            <input id="zlKey" placeholder="00a901ca...">
+            <label>域名（可选，默认 z-lib.gd）</label>
+            <input id="zlDomain" placeholder="https://z-lib.gd">
+            <button class="primary" id="zlSave" style="margin-top:10px">保存 Z-Library 凭证</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>选一种方式开始</h2>
+          <div class="tabs">
+            <button id="tabUpload" class="on">📤 上传文件</button>
+            <button id="tabSearch">🔍 在线搜书</button>
+          </div>
+
+          <div id="paneUpload">
+            <label>书名（用于笔记目录名）</label>
+            <input id="upTitle" placeholder="如 深度工作">
+            <label>作者（可选）</label>
+            <input id="upAuthor" placeholder="如 Cal Newport">
+            <label>文件（PDF / EPUB / TXT / MOBI / AZW3，≤200MB）</label>
+            <input id="upFile" type="file" accept=".pdf,.epub,.txt,.mobi,.azw3">
+          </div>
+
+          <div id="paneSearch" class="hidden">
+            <div id="zlibStatus" class="note"></div>
+            <label>书名</label>
+            <input id="seTitle" placeholder="如 Deep Work">
+            <label>作者（可选）</label>
+            <input id="seAuthor" placeholder="如 Cal Newport">
+            <div class="row" style="margin-top:10px">
+              <select id="seFormat"><option value="epub">偏好 EPUB</option><option value="pdf">偏好 PDF</option></select>
+              <button class="primary" id="seBtn" style="margin-top:0">搜索</button>
+            </div>
+            <div id="seResults" style="margin-top:12px"></div>
+          </div>
+
+          <button class="primary" id="goBtn" disabled>开始蒸馏</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>我的任务</h2>
+          <div id="jobs"><div class="note">还没有任务</div></div>
+        </div>
+        <div class="card">
+          <h2>我的书</h2>
+          <div id="books"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>个人学习用途 · 请只处理你有权使用的文件 · LLM 费用与凭证风险由使用方自行承担</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let myUidRaw = "", selectedCand = null, uploadDone = null, submitting = false;
+let authMode = "login";
+
+// ---- 主题 ----
+const dark = localStorage.getItem("theme") === "dark" ||
+  (!localStorage.getItem("theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+if (dark) document.documentElement.classList.add("dark");
+$("themeBtn").textContent = dark ? "☀️" : "🌙";
+$("themeBtn").onclick = () => {
+  document.documentElement.classList.toggle("dark");
+  const d = document.documentElement.classList.contains("dark");
+  localStorage.setItem("theme", d ? "dark" : "light");
+  $("themeBtn").textContent = d ? "☀️" : "🌙";
+};
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { credentials: "include", ...opts });
+  let j = null;
+  try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error((j && j.detail) || ("HTTP " + r.status));
+  return j;
+}
+const post = (p, body) => api(p, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+const put = (p, body) => api(p, { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+
+// ---- 鉴权 ----
+function showAuth() {
+  $("authView").classList.remove("hidden");
+  $("mainView").classList.add("hidden");
+  $("logoutBtn").classList.add("hidden");
+  $("whoami").textContent = "";
+}
+function showMain() {
+  $("authView").classList.add("hidden");
+  $("mainView").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
+}
+function setAuthMode(m) {
+  authMode = m;
+  $("authLogin").classList.toggle("on", m === "login");
+  $("authRegister").classList.toggle("on", m === "register");
+  $("authGo").textContent = m === "login" ? "登录" : "注册";
+  $("authErr").textContent = "";
+}
+$("authLogin").onclick = () => setAuthMode("login");
+$("authRegister").onclick = () => setAuthMode("register");
+$("authGo").onclick = async () => {
+  try {
+    await post(`/api/${authMode}`, { username: $("authUser").value.trim(), password: $("authPass").value });
+    $("authPass").value = "";
+    await onLoggedIn();
+  } catch (e) { $("authErr").textContent = e.message; }
+};
+$("logoutBtn").onclick = async () => { await post("/api/logout", {}); location.reload(); };
+
+async function onLoggedIn() {
+  const me = await api("/api/me");
+  myUidRaw = me.uid;
+  $("whoami").textContent = "👤 " + me.username;
+  showMain();
+  await refreshAccStatus();
+  await loadLlmSettings();
+  setTab("up");
+  loadJobs(); loadBooks();
+}
+
+// ---- 账户面板 ----
+$("accToggle").onclick = () => {
+  const b = $("accBody"); b.classList.toggle("hidden");
+  $("accArrow").textContent = b.classList.contains("hidden") ? "▸" : "▾";
+};
+async function refreshAccStatus() {
+  try {
+    const s = await api("/api/me/status");
+    const parts = [];
+    parts.push(s.llm_configured ? '<span class="badge ok">LLM 已配置</span>' : '<span class="badge err">LLM 未配置</span>');
+    parts.push(s.zlib_configured ? '<span class="badge ok">Z-Lib 已配置</span>' : '<span class="badge err">Z-Lib 未配置</span>');
+    if (!s.zlib_installed) parts.push('<span class="badge err">服务器未装 zlib</span>');
+    $("accStatus").innerHTML = parts.join("");
+  } catch (e) {}
+}
+async function loadLlmSettings() {
+  try {
+    const c = await api("/api/me/llm");
+    $("llmProvider").value = c.provider;
+    $("llmBase").value = c.base_url || "";
+    $("llmModel").value = c.model || "";
+    $("llmKey").placeholder = c.has_key ? "已保存（留空则不变）" : "sk-...";
+    toggleBase();
+  } catch (e) {}
+}
+function toggleBase() {
+  const oa = $("llmProvider").value === "openai";
+  $("baseLabel").style.display = oa ? "" : "none";
+  $("llmBase").style.display = oa ? "" : "none";
+}
+$("llmProvider").onchange = toggleBase;
+$("llmSave").onclick = async () => {
+  $("llmSave").disabled = true;
+  try {
+    await put("/api/me/llm", { provider: $("llmProvider").value, base_url: $("llmBase").value.trim(),
+      model: $("llmModel").value.trim(), api_key: $("llmKey").value.trim() });
+    $("llmKey").value = "";
+    await refreshAccStatus(); loadLlmSettings(); refreshGo();
+  } catch (e) { alert("保存失败：" + e.message); }
+  $("llmSave").disabled = false;
+};
+$("zlSave").onclick = async () => {
+  $("zlSave").disabled = true;
+  try {
+    await put("/api/me/zlib", { userid: $("zlUid").value.trim(), userkey: $("zlKey").value.trim(),
+      domain: $("zlDomain").value.trim() });
+    await refreshAccStatus(); refreshGo();
+  } catch (e) { alert("保存失败：" + e.message); }
+  $("zlSave").disabled = false;
+};
+
+// ---- tab ----
+function setTab(which) {
+  $("tabUpload").classList.toggle("on", which === "up");
+  $("tabSearch").classList.toggle("on", which === "se");
+  $("paneUpload").classList.toggle("hidden", which !== "up");
+  $("paneSearch").classList.toggle("hidden", which !== "se");
+  if (which === "se") refreshZlibStatus();
+  refreshGo();
+}
+$("tabUpload").onclick = () => setTab("up");
+$("tabSearch").onclick = () => setTab("se");
+
+// ---- zlib 状态 ----
+async function refreshZlibStatus() {
+  try {
+    const s = await api("/api/me/status");
+    $("zlibStatus").innerHTML = !s.zlib_installed
+      ? '<span class="badge err">服务器未安装 zlib CLI</span> 在线搜书不可用，请用上传模式。'
+      : (s.zlib_configured
+          ? '<span class="badge ok">你的 Z-Library 凭证已就绪</span>'
+          : '<span class="badge err">请先在上方“账户与凭证”里配置你的 Z-Library Cookie</span>');
+  } catch (e) {}
+  refreshGo();
+}
+
+// ---- 上传 ----
+$("upFile").onchange = async () => {
+  const f = $("upFile").files[0];
+  uploadDone = null;
+  if (!f) return refreshGo();
+  const fd = new FormData(); fd.append("file", f);
+  try {
+    const r = await api("/api/upload", { method: "POST", body: fd });
+    uploadDone = r.upload_id;
+    if (!$("upTitle").value) $("upTitle").value = f.name.replace(/\.[^.]+$/, "");
+  } catch (e) { alert(e.message); $("upFile").value = ""; }
+  refreshGo();
+};
+for (const k of ["upTitle","upAuthor"]) $(k).oninput = refreshGo;
+
+// ---- 搜索 ----
+$("seBtn").onclick = async () => {
+  const q = $("seTitle").value.trim();
+  if (!q) return;
+  $("seBtn").disabled = true; $("seBtn").textContent = "搜索中…";
+  selectedCand = null;
+  try {
+    const r = await api(`/api/zlib/search?q=${encodeURIComponent(q)}&author=${encodeURIComponent($("seAuthor").value.trim())}`);
+    if (r.error || !Array.isArray(r.results)) {
+      $("seResults").innerHTML = `<div class="note">${esc(r.error || "搜索失败")}</div>`;
+      return refreshGo();
+    }
+    $("seResults").innerHTML = r.results.length ? r.results.map((b, i) => `
+      <div class="cand" data-i="${i}">
+        <div><div class="t">${esc(b.title)}</div>
+        <div class="m">${esc(b.author || "未知作者")} · ${b.year || "?"} · ${esc((b.formats||[]).join(","))} · ${b.size ? (b.size/1048576).toFixed(1)+"MB" : ""}</div></div>
+      </div>`).join("") : `<div class="note">没搜到，换个关键词试试</div>`;
+    document.querySelectorAll(".cand").forEach(el => el.onclick = () => {
+      document.querySelectorAll(".cand").forEach(x => x.classList.remove("sel"));
+      el.classList.add("sel");
+      selectedCand = r.results[+el.dataset.i];
+      refreshGo();
+    });
+  } catch (e) { $("seResults").innerHTML = `<div class="note">${esc(e.message)}</div>`; }
+  finally { $("seBtn").disabled = false; $("seBtn").textContent = "搜索"; }
+};
+
+// ---- 提交任务 ----
+function refreshGo() {
+  const active = !$("paneSearch").classList.contains("hidden");
+  let ready = active ? !!selectedCand : (!!uploadDone && !!$("upTitle").value.trim());
+  $("goBtn").disabled = !ready;
+}
+$("goBtn").onclick = async () => {
+  if (submitting) return;
+  const active = !$("paneSearch").classList.contains("hidden");
+  const body = active
+    ? { mode: "search", book_title: selectedCand.title, author: selectedCand.author,
+        file_format: $("seFormat").value, zlib_id: selectedCand.zlib_id }
+    : { mode: "upload", book_title: $("upTitle").value.trim(), author: $("upAuthor").value.trim(),
+        upload_id: uploadDone };
+  submitting = true; $("goBtn").disabled = true; $("goBtn").textContent = "提交中…";
+  try { await post("/api/jobs", body); }
+  catch (e) { alert("提交失败：" + e.message); }
+  finally { submitting = false; $("goBtn").textContent = "开始蒸馏"; refreshGo(); loadJobs(); }
+};
+
+// ---- 任务 ----
+let pollTimer = null;
+async function loadJobs() {
+  let jobs = [];
+  try { jobs = await api("/api/jobs"); } catch (e) { return; }
+  const hasActive = jobs.some(j => j.status === "running" || j.status === "queued");
+  $("jobs").innerHTML = jobs.length ? jobs.map(j => `
+    <div class="job">
+      <div class="title">${esc(j.book_title)}
+        ${j.status === "done" && j.book_slug ? ` <span class="link" onclick="viewBook('${esc(j.book_slug)}')">看笔记 →</span>` : ""}
+        ${(j.status === "running" || j.status === "queued") ? `<span class="link" onclick="cancelJob('${j.id}')">取消</span>` : ""}
+      </div>
+      <div class="sub">
+        ${j.status === "running" ? '<span class="badge run">蒸馏中</span>' :
+          j.status === "done" ? '<span class="badge ok">完成</span>' :
+          j.status === "failed" ? '<span class="badge err">失败</span>' :
+          j.status === "canceled" ? '<span class="badge err">已取消</span>' : '<span class="badge">排队中</span>'}
+        ${j.llm_model ? "· " + esc(j.llm_model) : ""} · ${j.created}
+        ${j.error ? "<br><span style='color:var(--err)'>" + esc(j.error) + "</span>" : ""}
+      </div>
+      ${j.logs && j.logs.length ? `<pre class="log">${esc(j.logs.join("\n"))}</pre>` : ""}
+    </div>`).join("") : `<div class="note">还没有任务</div>`;
+  if (hasActive) { clearTimeout(pollTimer); pollTimer = setTimeout(loadJobs, 2000); }
+  if (jobs.some(j => j.status === "done")) loadBooks();
+}
+function cancelJob(id) {
+  if (!confirm("确定取消这个任务？")) return;
+  post(`/api/jobs/${id}/cancel`, {}).then(loadJobs);
+}
+function viewBook(slug) { location.href = "/book/" + encodeURIComponent(myUidRaw) + "/" + encodeURIComponent(slug); }
+
+// ---- 书库 ----
+async function loadBooks() {
+  let books = [];
+  try { books = await api("/api/books"); } catch (e) { return; }
+  $("books").innerHTML = books.map(b => `
+    <a class="book" href="/book/${encodeURIComponent(myUidRaw)}/${encodeURIComponent(b.slug)}">
+      <div class="t">📖 ${esc(b.title)}</div>
+      ${b.overview ? `<div class="o">${esc(b.overview)}</div>` : ""}
+    </a>`).join("") || `<div class="note">还没有蒸馏过的书</div>`;
+}
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// 启动：检查登录态
+(async () => {
+  try {
+    const me = await api("/api/me");
+    myUidRaw = me.uid;
+    $("whoami").textContent = "👤 " + me.username;
+    showMain();
+    await refreshAccStatus(); await loadLlmSettings(); setTab("up");
+    loadJobs(); loadBooks();
+  } catch (e) { showAuth(); }
+})();
+</script>
+</body>
+</html>

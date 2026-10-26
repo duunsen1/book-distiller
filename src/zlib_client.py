@@ -82,9 +82,19 @@ def _parse_size(size: str) -> Optional[int]:
 
 
 class ZlibClient:
-    def __init__(self, binary: str = None, timeout: int = 30):
+    def __init__(self, binary: str = None, timeout: int = 30, home: Optional[str] = None):
         self._binary = binary or os.environ.get("ZLIB_BIN") or "zlib"
         self._timeout = timeout
+        # home：按用户隔离 zlib 凭证。设为某目录后，zlib 子进程以该目录为 HOME，
+        # 就读/写 <home>/.config/zlib/ 下的 session.json 等，实现多用户互不干扰。
+        self._home = home
+
+    def _subprocess_env(self) -> Optional[dict]:
+        if not self._home:
+            return None
+        env = os.environ.copy()
+        env["HOME"] = self._home
+        return env
 
     # ---------- 底层 ----------
 
@@ -107,6 +117,7 @@ class ZlibClient:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=timeout or self._timeout,
+                env=self._subprocess_env(),
             )
         except subprocess.TimeoutExpired:
             raise ZlibError(f"zlib 命令超时（{timeout or self._timeout}s）: zlib {' '.join(args)}")
@@ -162,6 +173,37 @@ class ZlibClient:
         if not path or not os.path.exists(path):
             raise ZlibError(f"zlib 报告下载成功但找不到文件：{path!r}")
         return path
+
+
+# ---------- 用户凭证（多用户隔离） ----------
+
+def user_zlib_dir(home: str) -> str:
+    """某用户私有 HOME 下 zlib 的配置目录。"""
+    return os.path.join(home, ".config", "zlib")
+
+
+def write_user_session(home: str, cookies: dict, domain: str = None, mode: str = "eapi") -> str:
+    """把用户的 Z-Library 凭证写进 <home>/.config/zlib/session.json。
+
+    cookies 至少含 remix_userid / remix_userkey（Z-Library 网页登录后
+    浏览器 DevTools → Application → Cookies 里可取）。返回写入的文件路径。
+    """
+    d = user_zlib_dir(home)
+    os.makedirs(d, exist_ok=True)
+    session = {
+        "cookies": cookies,
+        "domain": domain or "https://z-lib.gd",
+        "mode": mode,
+    }
+    path = os.path.join(d, "session.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(session, f, ensure_ascii=False, indent=2)
+    return path
+
+
+def user_has_session(home: str) -> bool:
+    """该用户私有 HOME 里是否已配置 zlib 凭证。"""
+    return os.path.exists(os.path.join(user_zlib_dir(home), "session.json"))
 
 
 if __name__ == "__main__":

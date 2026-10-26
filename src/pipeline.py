@@ -21,7 +21,12 @@ from src.render import load_book, render_book_html
 
 logger = logging.getLogger(__name__)
 
-NOTES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "notes")
+# 笔记输出目录：默认项目根 notes/，可用 BOOK_NOTES_DIR 覆盖（Web 多用户模式下
+# 每用户指向自己的 data/users/<uid>/notes/）。
+NOTES_DIR = os.environ.get(
+    "BOOK_NOTES_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "notes"),
+)
 
 
 def _safe_filename(name: str) -> str:
